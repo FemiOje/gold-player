@@ -83,6 +83,8 @@ namespace Hertzole.GoldPlayer
             this.key = key;
         }
 
+        //ADD OTHER INPUTITEM METHOD OVERLOADS FOR JOYSTICK - FEMI
+
         public override bool Equals(object obj)
         {
 #if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
