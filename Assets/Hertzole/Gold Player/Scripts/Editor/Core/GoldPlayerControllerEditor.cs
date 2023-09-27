@@ -47,7 +47,7 @@ namespace Hertzole.GoldPlayer.Editor
         private SerializedProperty targetVirtualCamera;
 #endif
         private SerializedProperty targetCamera;
-        
+
         private SerializedProperty enableZooming;
         private SerializedProperty targetZoom;
         private SerializedProperty zoomInTime;
@@ -95,6 +95,18 @@ namespace Hertzole.GoldPlayer.Editor
         private SerializedProperty crouchCurve;
         private SerializedProperty standUpTime;
         private SerializedProperty standUpCurve;
+
+
+        private SerializedProperty canProne;
+        private SerializedProperty proneToggleMode;
+        private SerializedProperty proneSpeeds;
+        private SerializedProperty proneJumping;
+        private SerializedProperty proneHeight;
+        private SerializedProperty proneTime;
+        private SerializedProperty proneCurve;
+        //private SerializedProperty standUpTime;
+        //private SerializedProperty standUpCurve;
+
 
         private SerializedProperty canJump;
         private SerializedProperty jumpingRequiresStamina;
@@ -204,7 +216,7 @@ namespace Hertzole.GoldPlayer.Editor
             targetVirtualCamera = camera.FindPropertyRelative("targetVirtualCamera");
 #endif
             targetCamera = camera.FindPropertyRelative("targetCamera");
-            
+
             enableZooming = camera.FindPropertyRelative("enableZooming");
             targetZoom = camera.FindPropertyRelative("targetZoom");
             zoomInTime = camera.FindPropertyRelative("zoomInTime");
@@ -212,7 +224,7 @@ namespace Hertzole.GoldPlayer.Editor
             zoomOutTime = camera.FindPropertyRelative("zoomOutTime");
             zoomInCurve = camera.FindPropertyRelative("zoomInCurve");
             zoomInput = camera.FindPropertyRelative("zoomInput");
-            
+
             fieldOfViewKick = camera.FindPropertyRelative("fieldOfViewKick");
             fovEnable = fieldOfViewKick.FindPropertyRelative("enableFOVKick");
             fovUnscaledTime = fieldOfViewKick.FindPropertyRelative("unscaledTime");
@@ -249,8 +261,23 @@ namespace Hertzole.GoldPlayer.Editor
             crouchHeight = movement.FindPropertyRelative("crouchHeight");
             crouchTime = movement.FindPropertyRelative("crouchTime");
             crouchCurve = movement.FindPropertyRelative("crouchCurve");
+
             standUpTime = movement.FindPropertyRelative("standUpTime");
             standUpCurve = movement.FindPropertyRelative("standUpCurve");
+
+
+            canProne = movement.FindPropertyRelative("canProne");
+            proneToggleMode = movement.FindPropertyRelative("proneToggleMode");
+            proneSpeeds = movement.FindPropertyRelative("proneSpeeds");
+            proneJumping = movement.FindPropertyRelative("proneJumping");
+            proneHeight = movement.FindPropertyRelative("proneHeight");
+            proneTime = movement.FindPropertyRelative("proneTime");
+            proneCurve = movement.FindPropertyRelative("proneCurve");
+            //standUpTime = movement.FindPropertyRelative("standUpTime");
+            //standUpCurve = movement.FindPropertyRelative("standUpCurve");
+
+
+
 
             canJump = movement.FindPropertyRelative("canJump");
             jumpingRequiresStamina = movement.FindPropertyRelative("jumpingRequiresStamina");
@@ -336,7 +363,7 @@ namespace Hertzole.GoldPlayer.Editor
                         }
                     }
                 }
-                
+
                 inputContents = list.ToArray();
             }
         }
@@ -356,7 +383,7 @@ namespace Hertzole.GoldPlayer.Editor
                         characterController.transform.localScale = Vector3.one;
                     }
                 }
-                
+
                 if (Math.Abs(characterController.center.y - characterController.height / 2f) > 0.00001f)
                 {
                     EditorGUILayout.HelpBox("The Character Controller Y center must be half of the height. Set your Y center to " + characterController.height / 2 + "!", MessageType.Warning);
@@ -445,7 +472,7 @@ namespace Hertzole.GoldPlayer.Editor
                     EditorGUILayout.PropertyField(zoomInput);
                 });
             });
-            
+
             EditorGUILayout.Space();
 
             DrawFancyFoldout(fieldOfViewKick, "Field of View Kick", true, () =>
@@ -457,7 +484,7 @@ namespace Hertzole.GoldPlayer.Editor
                     {
                         EditorGUILayout.HelpBox("Zooming and field of view kick may cause some visual issues when both are active!", MessageType.Warning);
                     }
-                    
+
                     EditorGUILayout.PropertyField(fovUnscaledTime);
                     EditorGUILayout.PropertyField(fovKickWhen);
                     EditorGUILayout.PropertyField(fovKickAmount);
@@ -531,6 +558,30 @@ namespace Hertzole.GoldPlayer.Editor
                     EditorGUILayout.PropertyField(standUpCurve);
                 });
             });
+
+
+            EditorGUILayout.Space();
+
+            DrawFancyFoldout(canProne, "Proning", false, () =>
+            {
+                EditorGUILayout.PropertyField(canProne);
+                DrawElementsConditional(canProne, () =>
+                {
+                    EditorGUILayout.PropertyField(proneToggleMode);
+                    EditorGUILayout.PropertyField(proneSpeeds);
+                    EditorGUILayout.PropertyField(proneJumping);
+                    if (crouchHeight.floatValue < 0.5f)
+                    {
+                        EditorGUILayout.HelpBox("The Prone Height should not be less than 0.5 because it breaks the character controller!", MessageType.Warning);
+                    }
+                    EditorGUILayout.PropertyField(proneHeight);
+                    EditorGUILayout.PropertyField(proneTime);
+                    EditorGUILayout.PropertyField(proneCurve);
+                    EditorGUILayout.PropertyField(standUpTime);
+                    EditorGUILayout.PropertyField(standUpCurve);
+                });
+            });
+
 
             EditorGUILayout.Space();
 
@@ -670,7 +721,7 @@ namespace Hertzole.GoldPlayer.Editor
             EditorGUILayout.LabelField("Camera", EditorStyles.boldLabel);
 
             int index = 0;
-            
+
             SerializedProperty cam = camera.Copy();
             while (cam.NextVisible(true))
             {

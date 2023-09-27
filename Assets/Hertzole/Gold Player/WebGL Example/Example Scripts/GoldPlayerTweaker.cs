@@ -170,6 +170,11 @@ namespace Hertzole.GoldPlayer.Example
         private GoldPlayerTweakField crouchJumping;
         private GoldPlayerTweakField crouchHeight;
         private GoldPlayerTweakField crouchTime;
+        //PRONE
+        private GoldPlayerTweakField proneJumping;
+        private GoldPlayerTweakField proneHeight;
+        private GoldPlayerTweakField proneTime;
+
         private GoldPlayerTweakField standUpTime;
         private GoldPlayerTweakField groundStick;
         private GoldPlayerTweakField bobFrequency;
@@ -205,16 +210,16 @@ namespace Hertzole.GoldPlayer.Example
             CreateSubHeader("Zooming");
             CreateTweaker("Enable Zooming", x =>
             {
-	            targetPlayer.Camera.EnableZooming = x;
-	            targetZoom.SetInteractable(x);
-	            zoomInTime.SetInteractable(x);
-	            zoomOutTime.SetInteractable(x);
+                targetPlayer.Camera.EnableZooming = x;
+                targetZoom.SetInteractable(x);
+                zoomInTime.SetInteractable(x);
+                zoomOutTime.SetInteractable(x);
             }, targetPlayer.Camera.EnableZooming);
 
             targetZoom = CreateTweaker("Target Zoom", x => { targetPlayer.Camera.TargetZoom = x; }, targetPlayer.Camera.TargetZoom);
             zoomInTime = CreateTweaker("Zoom In Time", x => { targetPlayer.Camera.ZoomInTime = x; }, targetPlayer.Camera.ZoomInTime);
             zoomOutTime = CreateTweaker("Zoom Out Time", x => { targetPlayer.Camera.ZoomOutTime = x; }, targetPlayer.Camera.ZoomOutTime);
-            
+
             CreateSubHeader("FOV Kick");
             CreateTweaker("Enable FOV Kick", x =>
             {
@@ -294,6 +299,22 @@ namespace Hertzole.GoldPlayer.Example
             crouchHeight = CreateTweaker("Crouch Height", x => { targetPlayer.Movement.CrouchHeight = x; }, targetPlayer.Movement.CrouchHeight);
             crouchTime = CreateTweaker("Crouch Time", x => { targetPlayer.Movement.CrouchTime = x; }, targetPlayer.Movement.CrouchTime);
             standUpTime = CreateTweaker("Stand Up Time", x => { targetPlayer.Movement.StandUpTime = x; }, targetPlayer.Movement.StandUpTime);
+
+            //PRONING
+            CreateSubHeader("Proning");
+            CreateTweaker("Can Prone", x =>
+            {
+                targetPlayer.Movement.CanProne = x;
+                proneJumping.SetInteractable(x);
+                proneHeight.SetInteractable(x);
+                proneTime.SetInteractable(x);
+                standUpTime.SetInteractable(x);
+            }, targetPlayer.Movement.CanProne);
+            proneJumping = CreateTweaker("Prone Jumping", x => { targetPlayer.Movement.ProneJumping = x; }, targetPlayer.Movement.ProneJumping);
+            proneHeight = CreateTweaker("Prone Height", x => { targetPlayer.Movement.ProneHeight = x; }, targetPlayer.Movement.ProneHeight);
+            proneTime = CreateTweaker("Prone Time", x => { targetPlayer.Movement.ProneTime = x; }, targetPlayer.Movement.ProneTime);
+            //END OF PRONING
+
             CreateSubHeader("Other");
             CreateTweaker("Acceleration", x => { targetPlayer.Movement.Acceleration = x; }, targetPlayer.Movement.Acceleration);
             CreateTweaker("Gravity", x => { targetPlayer.Movement.Gravity = x; }, targetPlayer.Movement.Gravity);

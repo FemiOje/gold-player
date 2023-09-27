@@ -61,4 +61,18 @@ namespace Hertzole.GoldPlayer
         /// </summary>
         Toggle = 1,
     }
+
+    public enum ProneToggleMode
+    {
+        /// <summary>
+        /// Toggle is off and prone button must be held down to prone.
+        /// </summary>
+        Hold = 0,
+
+        /// <summary>
+        /// Proning is permanently toggled. Player must press prone
+        /// button again to toggle off.
+        /// </summary>
+        Toggle = 1,
+    }
 }

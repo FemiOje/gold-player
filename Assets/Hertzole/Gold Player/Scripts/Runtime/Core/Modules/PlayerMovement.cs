@@ -88,7 +88,7 @@ namespace Hertzole.GoldPlayer
         [SerializeField]
         [Tooltip("The movement speeds when crouching.")]
         [FormerlySerializedAs("m_CrouchSpeeds")]
-        private MovementSpeeds crouchSpeeds = new MovementSpeeds(2f, 1.5f, 1f);
+        private MovementSpeeds crouchSpeeds = new MovementSpeeds(1.5f, 1.5f, 1f);
         [SerializeField]
         [Tooltip("Determines if the player can jump while crouched.")]
         [FormerlySerializedAs("m_CrouchJumping")]
@@ -96,20 +96,53 @@ namespace Hertzole.GoldPlayer
         [SerializeField]
         [Tooltip("The height of the character controller when crouched.")]
         [FormerlySerializedAs("m_CrouchHeight")]
-        private float crouchHeight = 1f;
+        private float crouchHeight = 0.8f; 
         [SerializeField]
         [Tooltip("How long it takes to crouch.")]
-        private float crouchTime = 0.25f;     
-        [SerializeField] 
+        private float crouchTime = 0.25f;
+        [SerializeField]
         private AnimationCurve crouchCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+
         [SerializeField]
         [Tooltip("How long it takes to crouch.")]
         private float standUpTime = 0.25f;
-        [SerializeField] 
+        [SerializeField]
         private AnimationCurve standUpCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-        //////// OTHER
+        /// PRONE 
         [SerializeField]
+        [Tooltip("Determines if the player can prone.")]
+        [FormerlySerializedAs("m_CanProne")]
+        private bool canProne = true;
+        [SerializeField]
+        [Tooltip("Configuration of proning as a toggle.")]
+        [FormerlySerializedAs("m_ProneToggleMode")]
+        private ProneToggleMode proneToggleMode = ProneToggleMode.Hold;
+        [SerializeField]
+        [Tooltip("The movement speeds when proning.")]
+        [FormerlySerializedAs("m_ProneSpeeds")]
+        private MovementSpeeds proneSpeeds = new MovementSpeeds(0.5f, 0.5f, 0.5f);
+        [SerializeField]
+        [Tooltip("Determines if the player can jump while in prone position.")]
+        [FormerlySerializedAs("m_ProneJumping")]
+        private bool proneJumping = false;
+        [SerializeField]
+        [Tooltip("The height of the character controller when in prone position.")]
+        [FormerlySerializedAs("m_ProneHeight")]
+        private float proneHeight = 0.5f;
+        [SerializeField]
+        [Tooltip("How long it takes to prone.")]
+        private float proneTime = 0.25f;
+        [SerializeField]
+        private AnimationCurve proneCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+        [SerializeField]
+        // [Tooltip("How long it takes to prone.")]
+        // private float standUpTime = 0.25f;
+        // [SerializeField]
+        // private AnimationCurve standUpCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+        //////// OTHER
         [Tooltip("The layers the player will treat as ground. SHOULD NOT INCLUDE THE LAYER THE PLAYER IS ON!")]
         [FormerlySerializedAs("m_GroundLayer")]
         private LayerMask groundLayer = -1;
@@ -165,6 +198,10 @@ namespace Hertzole.GoldPlayer
         [Tooltip("Crouch input action.")]
         private string input_Crouch = "Crouch";
 
+        [SerializeField]
+        [Tooltip("Prone input action.")]
+        private string input_Prone = "Prone";
+
         // The real calculated jump height.
         private float realJumpHeight;
         // The original character controller height.
@@ -178,6 +215,16 @@ namespace Hertzole.GoldPlayer
         // The position to set the camera to when crouching.
         private float crouchCameraPosition;
         // Just used in Input smoothing.
+
+
+        //PRONE
+        private float controllerProneCenter;
+        // The current camera position, related to proning.
+        private float currentProneCameraPosition;
+        // The position to set the camera to when proning.
+        private float proneCameraPosition;
+
+
         private float forwardSpeedVelocity;
         // Just used in Input smoothing.
         private float sidewaysSpeedVelocity;
@@ -195,6 +242,12 @@ namespace Hertzole.GoldPlayer
         private float crouchTimer;
         // The position of the camera when a crouching event starts.
         private float crouchStartPosition;
+        //PRONE
+        // Timer used for lerping proning.
+        private float proneTimer;
+        // The position of the camera when a proning event starts.
+        private float proneStartPosition;
+
 
         // The current amount of times an air jump has been performed.
         internal int currentJumps;
@@ -207,6 +260,9 @@ namespace Hertzole.GoldPlayer
         private int runHash;
         // Hash for crouch input.
         private int crouchHash;
+        //PRONE
+        // Hash for prone input.
+        private int proneHash;
 
         // Is the player grounded?
         private bool isGrounded;
@@ -227,11 +283,22 @@ namespace Hertzole.GoldPlayer
         // Is the player crouching?
         private bool isCrouching;
         // Can the player stand up while crouching?
+        //PRONE
+        private bool shouldProne;
+        // Is the player in prone position?
+        private bool isProning;
+        // Can the player stand up while in prone position?
+
+
         private bool canStandUp;
         // Was the player previously grounded?
         private bool previouslyGrounded;
         // Was the player previously crouched?
         private bool previouslyCrouched;
+        //PRONE
+        // Was the player previously in prone position?
+        private bool previouslyProned;
+
         // Was the player previously running?
         private bool previouslyRunning;
         // Determines if the player should jump.
@@ -275,7 +342,7 @@ namespace Hertzole.GoldPlayer
         public bool UnscaledTime { get { return unscaledTime; } set { unscaledTime = value; } }
 
         /// <summary> The speeds when walking. </summary>
-        public MovementSpeeds WalkingSpeeds { get { return walkingSpeeds; } set { walkingSpeeds = value; if (!isRunning) { moveSpeed = value; } } }
+        public MovementSpeeds WalkingSpeeds { get { return walkingSpeeds; } set { walkingSpeeds = value; if (!isRunning && !isCrouching && !isProning) { moveSpeed = value; } } }
 
         /// <summary> Multiplies the current move speed. </summary>
         public float MoveSpeedMultiplier { get { return moveSpeedMultiplier; } set { moveSpeedMultiplier = value; } }
@@ -315,13 +382,31 @@ namespace Hertzole.GoldPlayer
         /// <summary> Configuration of crouching as a toggle. </summary>
         public CrouchToggleMode CrouchToggleMode { get { return crouchToggleMode; } set { crouchToggleMode = value; } }
         /// <summary> The movement speeds when crouching. </summary>
-        public MovementSpeeds CrouchSpeeds { get { return crouchSpeeds; } set { crouchSpeeds = value; } }
+        public MovementSpeeds CrouchSpeeds { get { return crouchSpeeds; } set { crouchSpeeds = value; if (isCrouching) { moveSpeed = value; } } }
         /// <summary> Determines if the player can jump while crouched. </summary>
         public bool CrouchJumping { get { return crouchJumping; } set { crouchJumping = value; } }
         /// <summary> The height of the character controller when crouched. </summary>
         public float CrouchHeight { get { return crouchHeight; } set { crouchHeight = value; } }
         /// <summary> How long it takes to crouch. </summary>
         public float CrouchTime { get { return crouchTime; } set { crouchTime = value; } }
+
+
+        /// <summary> Determines if the player can go to prone mode. </summary>
+        public bool CanProne { get { return canProne; } set { canProne = value; } }
+        /// <summary> Configuration of "proning" as a toggle. </summary>
+        public ProneToggleMode ProneToggleMode { get { return proneToggleMode; } set { proneToggleMode = value; } }
+        /// <summary> The movement speeds when in prone position. </summary>
+        public MovementSpeeds ProneSpeeds { get { return proneSpeeds; } set { proneSpeeds = value; if (isProning) { moveSpeed = value; } } }
+        /// <summary> Determines if the player can jump while in prone position. </summary>
+        public bool ProneJumping { get { return proneJumping; } set { proneJumping = value; } }
+        /// <summary> The height of the character controller when in prone position. </summary>
+        public float ProneHeight { get { return proneHeight; } set { proneHeight = value; } }
+        /// <summary> How long it takes to prone. </summary>
+        public float ProneTime { get { return proneTime; } set { proneTime = value; } }
+
+
+
+
         /// <summary> How long it takes to stand up. </summary>
         public float StandUpTime { get { return standUpTime; } set { standUpTime = value; } }
 
@@ -385,6 +470,9 @@ namespace Hertzole.GoldPlayer
         public string RunInput { get { return input_Run; } set { input_Run = value; runHash = GoldPlayerController.InputNameToHash(value); } }
         /// <summary> Crouch input action. </summary>
         public string CrouchInput { get { return input_Crouch; } set { input_Crouch = value; crouchHash = GoldPlayerController.InputNameToHash(value); } }
+        //PRONE
+        /// <summary> Prone input action. </summary>
+        public string ProneInput { get { return input_Prone; } set { input_Prone = value; proneHash = GoldPlayerController.InputNameToHash(value); } }
 
         /// <summary> Is the player grounded? </summary>
         public bool IsGrounded { get { return isGrounded; } }
@@ -398,7 +486,12 @@ namespace Hertzole.GoldPlayer
         public bool IsFalling { get { return isFalling; } }
         /// <summary> Is the player crouching? </summary>
         public bool IsCrouching { get { return isCrouching; } }
-        /// <summary> Can the player stand up while crouching? </summary>
+        //PRONE
+        /// <summary> Is the player in prone mode? </summary>
+        public bool IsProning { get { return isProning; } }
+
+
+        /// <summary> Can the player stand up while crouching/proning? </summary>
         public bool CanStandUp { get { return canStandUp; } }
         /// <summary> Was the jump button pressed? </summary>
         public bool PressedJump { get { return pressedJump; } set { pressedJump = value; } }
@@ -408,6 +501,10 @@ namespace Hertzole.GoldPlayer
         public bool ShouldRun { get { return shouldRun; } set { shouldRun = value; } }
         /// <summary> Should the player crouch? </summary>
         public bool ShouldCrouch { get { return shouldCrouch; } set { shouldCrouch = value; } }
+        //PRONE
+        /// <summary> Should the player go to prone position? </summary>
+        public bool ShouldProne { get { return shouldProne; } set { shouldProne = value; } }
+
 
         /// <summary> Raw input values for movement on the X and Z axis. </summary>
         public Vector2 MovementInput { get { return movementInput; } set { movementInput = value; } }
@@ -425,6 +522,13 @@ namespace Hertzole.GoldPlayer
         public event GoldPlayerDelegates.PlayerEvent OnBeginCrouch;
         /// <summary> Fires when the player stops crouching. </summary>
         public event GoldPlayerDelegates.PlayerEvent OnEndCrouch;
+
+        //PRONE
+        /// <summary> Fires when the player begins proning. </summary>
+        public event GoldPlayerDelegates.PlayerEvent OnBeginProne;
+        /// <summary> Fires when the player stops proning. </summary>
+        public event GoldPlayerDelegates.PlayerEvent OnEndProne;
+
         /// <summary> Fires when the player begins running. </summary>
         public event GoldPlayerDelegates.PlayerEvent OnBeginRun;
         /// <summary> Fires when the player stops running. </summary>
@@ -450,11 +554,11 @@ namespace Hertzole.GoldPlayer
             [UnityEngine.TestTools.ExcludeFromCoverage]
             set { }
         }
-        
+
         /// <summary> How fast the lerp for the head is when crouching/standing up. </summary>
         [System.Obsolete("Use 'CrouchTime' or 'StandUpTime' instead This will be removed on build.", true)]
         public float CrouchHeadLerp { get { return 0; } set { } }
-        
+
 #endif
         #endregion
 
@@ -464,11 +568,13 @@ namespace Hertzole.GoldPlayer
             walkingSpeeds.CalculateMax();
             runSpeeds.CalculateMax();
             crouchSpeeds.CalculateMax();
-            
+            proneSpeeds.CalculateMax();
+
             // Cache the hashes for input.
             moveHash = GoldPlayerController.InputNameToHash(input_Move);
             jumpHash = GoldPlayerController.InputNameToHash(input_Jump);
             crouchHash = GoldPlayerController.InputNameToHash(input_Crouch);
+            proneHash = GoldPlayerController.InputNameToHash(input_Prone); //prone
             runHash = GoldPlayerController.InputNameToHash(input_Run);
 
             // Initialize the stamina module.
@@ -477,6 +583,7 @@ namespace Hertzole.GoldPlayer
             movingPlatforms.Initialize(PlayerController, PlayerInput);
 
             crouchTimer = standUpTime;
+            proneTimer = standUpTime; //prone
 
             // Make the gravity + if needed.
             if (gravity < 0)
@@ -510,6 +617,13 @@ namespace Hertzole.GoldPlayer
             crouchCameraPosition = PlayerController.Camera.CameraHead.localPosition.y - (CharacterController.height - crouchHeight);
             // Set the current crouch camera position to the original camera position.
             currentCrouchCameraPosition = originalCameraPosition;
+
+            // Calculate the prone center for the character controller.
+            controllerProneCenter = ProneHeight / 2;
+            // Calculate the camera position for when proning.
+            proneCameraPosition = PlayerController.Camera.CameraHead.localPosition.y - (CharacterController.height - proneHeight);
+            // Set the current prone camera position to the original camera position.
+            currentProneCameraPosition = originalCameraPosition;
 
             if (groundCheck == GroundCheckType.Raycast)
             {
@@ -654,6 +768,10 @@ namespace Hertzole.GoldPlayer
             BasicMovement(unscaledTime ? unscaledDeltaTime : deltaTime);
             // Do crouching.
             Crouching(unscaledTime ? unscaledDeltaTime : deltaTime);
+
+            // Do proning.
+            Proning(unscaledTime ? unscaledDeltaTime : deltaTime);
+
             // Do running.
             Running();
             // Do force update.
@@ -1114,7 +1232,7 @@ namespace Hertzole.GoldPlayer
                     {
                         crouchTimer = 0;
                         crouchStartPosition = PlayerController.Camera.CameraHead.localPosition.y;
-     
+
 #if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
                         OnEndCrouch?.Invoke();
 #else
@@ -1145,7 +1263,7 @@ namespace Hertzole.GoldPlayer
                     {
                         crouchTimer = 0;
                         crouchStartPosition = PlayerController.Camera.CameraHead.localPosition.y;
-                        
+
 #if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
                         OnBeginCrouch?.Invoke();
 #else
@@ -1161,6 +1279,9 @@ namespace Hertzole.GoldPlayer
                     // Set the character controller center to the crouch center.
                     CharacterController.center = new Vector3(CharacterController.center.x, controllerCrouchCenter, CharacterController.center.z);
 
+                    PlayerController.Camera.CameraHead.localPosition = new Vector3(PlayerController.Camera.CameraHead.localPosition.x, controllerCrouchCenter, PlayerController.Camera.CameraHead.localPosition.z);
+
+
                     // Set the move speed to the crouch speed.
                     moveSpeed = crouchSpeeds;
 
@@ -1170,7 +1291,7 @@ namespace Hertzole.GoldPlayer
 
                 // Used to determine the player head crouch position.
                 float percent = 0;
-                
+
                 if (isCrouching)
                 {
                     // If crouch time is more than 0, smoothly lerp the value. Otherwise just set the value.
@@ -1184,8 +1305,7 @@ namespace Hertzole.GoldPlayer
                         else
                         {
                             percent = 1;
-                        }   
-                        
+                        }
                         currentCrouchCameraPosition = Mathf.Lerp(crouchStartPosition, crouchCameraPosition, crouchCurve.Evaluate(percent));
                     }
                     else
@@ -1205,8 +1325,8 @@ namespace Hertzole.GoldPlayer
                         else
                         {
                             percent = 1;
-                        }   
-                        
+                        }
+
                         currentCrouchCameraPosition = Mathf.Lerp(crouchStartPosition, originalCameraPosition, standUpCurve.Evaluate(percent));
                     }
                     else
@@ -1227,6 +1347,172 @@ namespace Hertzole.GoldPlayer
                 isCrouching = false;
             }
         }
+
+
+
+
+        ///PRONING
+        private void Proning(float deltaTime)
+        {
+            // Only run the code if we can prone. If we can't, always set 'isProning' to false.
+            if (canProne)
+            {
+                if (canMoveAround)
+                {
+                    switch (proneToggleMode)
+                    {
+                        case ProneToggleMode.Hold:
+                            {
+                                shouldProne = GetButton(proneHash);
+                                break;
+                            }
+                        case ProneToggleMode.Toggle:
+                            {
+                                bool proneButtonPressed = GetButtonDown(proneHash);
+                                if (proneButtonPressed)
+                                {
+                                    shouldProne = !shouldProne;
+                                }
+                                break;
+                            }
+                    }
+                }
+
+                // If the player wants to be proning, set is proning to true.
+                // Else if we can stand up and we are proning, stop proning.
+                if (shouldProne)
+                {
+                    isProning = true;
+                }
+                else if (canStandUp && isProning && !shouldProne)
+                {
+                    // If the player was previously in prone position, fire the OnEndProne event, as the player is longer proning.
+                    if (previouslyProned)
+                    {
+                        proneTimer = 0;
+                        proneStartPosition = PlayerController.Camera.CameraHead.localPosition.y;
+
+#if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
+                        OnEndProne?.Invoke();
+#else
+                        if (OnEndProne != null)
+                            OnEndProne.Invoke();
+#endif
+                    }
+
+                    // Set 'isProning' to false.
+                    isProning = false;
+                    // Set the character controller height to the original height we got at the start.
+                    CharacterController.height = originalControllerHeight;
+                    // Set the character controller center to the original center we got at the start.
+                    CharacterController.center = originalControllerCenter;
+
+                    // Set the move speed to the walking speed.
+                    moveSpeed = walkingSpeeds;
+
+                    // The player was not previously proned.
+                    previouslyProned = false;
+                }
+
+                // Only do the code if the player is proning.
+                if (isProning)
+                {
+                    // If the player wasn't previously proned, fire the OnBeginProne event, as the player is now proning.
+                    if (!previouslyProned)
+                    {
+                        proneTimer = 0;
+                        proneStartPosition = PlayerController.Camera.CameraHead.localPosition.y;
+
+#if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
+                        OnBeginProne?.Invoke();
+#else
+                        if (OnBeginProne != null)
+                            OnBeginProne.Invoke();
+#endif
+                    }
+
+                    // Check if we can stand up and update the 'canStandUp' value.
+                    canStandUp = CheckCanStandUp();
+
+                    // Set the character controller height to the prone height.
+                    CharacterController.height = proneHeight;
+
+                    // Set the character controller center to the prone center.
+                    CharacterController.center = new Vector3(CharacterController.center.x, controllerProneCenter, CharacterController.center.z);
+
+                    // Set the move speed to the prone speed.
+                    moveSpeed = proneSpeeds;
+
+                    // The player was previously in prone position.
+                    previouslyProned = true;
+                }
+
+                // Used to determine the player head prone position.
+                float percent = 0;
+
+                if (isProning)
+                {
+                    // If prone time is more than 0, smoothly lerp the value. Otherwise just set the value.
+                    if (proneTime > 0)
+                    {
+                        if (proneTimer < proneTime)
+                        {
+                            percent = proneTimer / proneTime;
+                            proneTimer += deltaTime;
+                        }
+                        else
+                        {
+                            percent = 1;
+                        }
+
+                        currentProneCameraPosition = Mathf.Lerp(proneStartPosition, proneCameraPosition, proneCurve.Evaluate(percent));
+                    }
+                    else
+                    {
+                        currentProneCameraPosition = proneCameraPosition;
+                    }
+                }
+                else
+                {
+                    if (standUpTime > 0)
+                    {
+                        if (proneTimer < standUpTime)
+                        {
+                            percent = proneTimer / standUpTime;
+                            proneTimer += deltaTime;
+                        }
+                        else
+                        {
+                            percent = 1;
+                        }
+
+                        currentProneCameraPosition = Mathf.Lerp(proneStartPosition, originalCameraPosition, standUpCurve.Evaluate(percent));
+                    }
+                    else
+                    {
+                        currentProneCameraPosition = originalCameraPosition;
+                    }
+                }
+
+                Vector3 localPos = PlayerController.Camera.CameraHead.localPosition;
+
+                // Lerp the current prone camera position to either the prone camera position or the original camera position.
+                // Set the camera head position to the current prone camera position.
+                PlayerController.Camera.CameraHead.localPosition = new Vector3(localPos.x, currentProneCameraPosition, localPos.z);
+            }
+            else
+            {
+                // We can't prone, always set 'isProning' to false.
+                isProning = false;
+            }
+        }
+
+
+
+
+
+
+
 
         /// <summary>
         /// Checks if there's anything above the player that could stop the player from standing up.
@@ -1318,11 +1604,13 @@ namespace Hertzole.GoldPlayer
                 WalkingSpeeds = walkingSpeeds;
                 RunSpeeds = runSpeeds;
                 CrouchSpeeds = crouchSpeeds;
+                ProneSpeeds = proneSpeeds;
                 JumpHeight = jumpHeight;
 
                 walkingSpeeds.OnValidate();
                 runSpeeds.OnValidate();
                 crouchSpeeds.OnValidate();
+                proneSpeeds.OnValidate();
 
                 if (!canMoveAround)
                 {

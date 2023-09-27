@@ -1520,6 +1520,70 @@ namespace Hertzole.GoldPlayer.Tests
             }
         }
 
+
+
+
+
+        //prone mode hold and prone mode toggle tests
+        [UnityTest]
+        public IEnumerator ProneModeHold()
+        {
+            player.Movement.ProneToggleMode = ProneToggleMode.Hold;
+
+            yield return RunTimeScaleTest(Test(), Test());
+
+            IEnumerator Test()
+            {
+                Assert.IsFalse(player.Movement.IsProning, "Player was proning when no input were given at the start.");
+                input.isProning = true;
+
+                yield return WaitFrames(1);
+
+                Assert.IsTrue(player.Movement.ShouldProne);
+                Assert.IsTrue(player.Movement.IsProning, "Player was not proning while prone button was held.");
+                input.isProning = false;
+
+                yield return WaitFrames(1);
+
+                Assert.IsFalse(player.Movement.ShouldProne);
+                Assert.IsFalse(player.Movement.IsProning, "Player was still proning after no prone input was held.");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ProneModeToggle()
+        {
+            player.Movement.ProneToggleMode = ProneToggleMode.Toggle;
+
+            yield return RunTimeScaleTest(Test(), Test());
+
+            IEnumerator Test()
+            {
+                Assert.IsFalse(player.Movement.IsProning, "Player was proning when no input were given at the start.");
+                input.isProningToggle = true;
+
+                yield return WaitFrames(1);
+
+                Assert.IsFalse(input.GetButtonDown(player.Movement.ProneInput), "prone input was true.");
+                Assert.IsTrue(player.Movement.ShouldProne);
+                Assert.IsTrue(player.Movement.IsProning, "Player was not proning while prone button was toggled.");
+
+                input.isProningToggle = true;
+
+                yield return WaitFrames(1);
+
+                Assert.IsFalse(input.GetButtonDown(player.Movement.ProneInput), "Prone input was true.");
+                Assert.IsFalse(player.Movement.IsProning, "Player was still proning after no prone input was held.");
+                Assert.IsFalse(player.Movement.ShouldProne);
+            }
+        }
+        //end of test
+
+
+
+
+
+
 #if UNITY_EDITOR
         [UnityTest]
         public IEnumerator ValidateResetMovementInput()

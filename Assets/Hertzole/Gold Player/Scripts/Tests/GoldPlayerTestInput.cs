@@ -12,6 +12,8 @@ namespace Hertzole.GoldPlayer.Tests
         public bool isJumpingToggle;
         public bool isCrouching;
         public bool isCrouchingToggle;
+        public bool isProning;
+        public bool isProningToggle;
         public bool isInteracting;
 
         public const string HORIZONTAL = "Horizontal";
@@ -22,6 +24,7 @@ namespace Hertzole.GoldPlayer.Tests
         public const string LOOK = "Looking";
         public const string RUN = "Running";
         public const string CROUCH = "Crouching";
+        public const string PRONE = "Proning";
         public const string JUMP = "Jumping";
         public const string INTERACT = "Interacting";
 
@@ -34,6 +37,7 @@ namespace Hertzole.GoldPlayer.Tests
         private readonly int lookHash = GoldPlayerController.InputNameToHash(LOOK);
         private readonly int runHash = GoldPlayerController.InputNameToHash(RUN);
         private readonly int crouchHash = GoldPlayerController.InputNameToHash(CROUCH);
+        private readonly int proneHash = GoldPlayerController.InputNameToHash(PRONE);
         private readonly int jumpHash = GoldPlayerController.InputNameToHash(JUMP);
         private readonly int interactHash = GoldPlayerController.InputNameToHash(INTERACT);
 
@@ -119,6 +123,11 @@ namespace Hertzole.GoldPlayer.Tests
                 return isCrouching;
             }
 
+            if (buttonName == proneHash)
+            {
+                return isProning;
+            }
+
             return false;
         }
 
@@ -154,6 +163,13 @@ namespace Hertzole.GoldPlayer.Tests
             {
                 bool r = isCrouchingToggle;
                 isCrouchingToggle = false;
+                return r;
+            }
+
+            if (buttonName == proneHash)
+            {
+                bool r = isProningToggle;
+                isProningToggle = false;
                 return r;
             }
 

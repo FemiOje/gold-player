@@ -49,6 +49,7 @@ namespace Hertzole.GoldPlayer
             new InputItem("Zoom", "Zoom", KeyCode.Z),
             new InputItem("Jump", "Jump", KeyCode.Space),
             new InputItem("Crouch", "Crouch", KeyCode.C),
+            new InputItem("Prone", "Prone", KeyCode.P),
             new InputItem("Run", "Run", KeyCode.LeftShift),
 #if !GOLD_PLAYER_DISABLE_INTERACTION
             new InputItem("Interact", "Interact", KeyCode.E),
@@ -341,7 +342,7 @@ namespace Hertzole.GoldPlayer
         {
             if (!inputsDic.ContainsKey(action))
             {
-                Debug.LogError($"There's no input action called '{action}' on '{gameObject.name}'.", gameObject);
+                Debug.LogError($"There's no input action called '{action}' on '{gameObject.name}'. Action type: {type}", gameObject);
                 return false;
             }
 
