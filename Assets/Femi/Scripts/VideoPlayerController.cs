@@ -7,53 +7,80 @@ using Hertzole.GoldPlayer; //the namespace for Gold Player Input System
 public class VideoPlayerController : MonoBehaviour
 {
     public GameObject goldPlayerPrefab;
-    VideoPlayer exampleVideo;
+
+    VideoPlayer worldSpaceVideo;
+    VideoPlayer cameraSpaceVideo;
+
     bool triggerEntered;
-    bool videoPlaying;
+    bool isVideoPlaying;
+
     public GameObject instructionText;
+
+    [SerializeField] GameObject playerCamera;
+    string triggerName;
 
 
     // Start is called before the first frame update
     void Start()
     {
         goldPlayerPrefab = GameObject.Find("Gold Player Prefab");
-        exampleVideo = GameObject.Find("Video Surface").GetComponent<VideoPlayer>();
+
+        worldSpaceVideo = GameObject.Find("World Space Video Surface").GetComponent<VideoPlayer>();
+        cameraSpaceVideo = playerCamera.GetComponent<VideoPlayer>();
+
         triggerEntered = false;
-        videoPlaying = false;
+        isVideoPlaying = false;
+
         instructionText.SetActive(true);
 
         // Subscribe to video events
-        exampleVideo.prepareCompleted += OnVideoPrepareCompleted;
-        exampleVideo.loopPointReached += OnVideoLoopPointReached;
+        worldSpaceVideo.prepareCompleted += OnVideoPrepareCompleted;
+        worldSpaceVideo.loopPointReached += OnVideoLoopPointReached;
+
+        cameraSpaceVideo.prepareCompleted += OnVideoPrepareCompleted;
+        cameraSpaceVideo.loopPointReached += OnVideoLoopPointReached;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (exampleVideo.isPlaying)
+        if ((worldSpaceVideo != null && worldSpaceVideo.isPlaying) || (cameraSpaceVideo != null && cameraSpaceVideo.isPlaying))
         {
-            videoPlaying = true;
+            isVideoPlaying = true;
+            instructionText.SetActive(false); // deactivate instructionText
         }
         else
         {
-            videoPlaying = false;
+            isVideoPlaying = false;
+            instructionText.SetActive(true); // Reactivate instructionText
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
         triggerEntered = true;
+
+        if (gameObject.tag.Equals("Camera Space"))
+        {
+            triggerName = "Camera Space";
+
+        } else if (gameObject.tag.Equals("World Space"))
+        {
+            triggerName = "World Space";
+        }
     }
 
     private void OnTriggerExit(Collider other)
     {
         triggerEntered = false;
+        triggerName = "None";
     }
 
     public void PlayVideo()
     {
         GoldPlayerInputSystem goldPlayerControls = goldPlayerPrefab.GetComponent<GoldPlayerInputSystem>();
-        if (triggerEntered && !videoPlaying)
+
+        if (triggerEntered && !isVideoPlaying)
         {
             // Deactivate the specified component while the video is playing
             if (goldPlayerControls != null)
@@ -61,10 +88,16 @@ public class VideoPlayerController : MonoBehaviour
                 goldPlayerControls.enabled = false;
             }
 
-            instructionText.SetActive(false); // Deactivate instructionText
-            //goldPlayerPrefab.transform.position = watchVideoPosition; //Vector3(2.3873024,0.079999879,-11.0638742)
-            //goldPlayerPrefab.transform.LookAt(videoPlayerBox.transform);
-            exampleVideo.Play();
+            //instructionText.SetActive(false); // Deactivate instructionText
+
+            if (triggerName == "World Space")
+            {
+                worldSpaceVideo.Play();
+            }
+            else if (triggerName == "Camera Space")
+            {
+                cameraSpaceVideo.Play();
+            }
         }
     }
 
@@ -72,6 +105,7 @@ public class VideoPlayerController : MonoBehaviour
     private void OnVideoPrepareCompleted(VideoPlayer source)
     {
         // The video is ready to play
+        source.Play();
     }
 
     // Called when the video reaches its end (including looping)
@@ -84,15 +118,17 @@ public class VideoPlayerController : MonoBehaviour
             goldPlayerControls.enabled = true;
         }
 
-        // Deactivate the video and reactivate instructionText
-        exampleVideo.Stop();
-        instructionText.SetActive(true); // Reactivate instructionText
+        // Deactivate the video
+        source.Stop();
     }
 
     // Unsubscribe from events when the script is destroyed
     private void OnDestroy()
     {
-        exampleVideo.prepareCompleted -= OnVideoPrepareCompleted;
-        exampleVideo.loopPointReached -= OnVideoLoopPointReached;
+        worldSpaceVideo.prepareCompleted -= OnVideoPrepareCompleted;
+        worldSpaceVideo.loopPointReached -= OnVideoLoopPointReached;
+
+        cameraSpaceVideo.prepareCompleted -= OnVideoPrepareCompleted;
+        cameraSpaceVideo.loopPointReached -= OnVideoLoopPointReached;
     }
 }
