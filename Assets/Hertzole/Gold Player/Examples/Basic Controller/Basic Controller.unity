@@ -135,6 +135,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Gold Player Prefab
       objectReference: {fileID: 0}
+    - target: {fileID: 6512708077221340537, guid: 1538234b58ccc9d48a4f478ac9630f99,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6518173451122871709, guid: 1538234b58ccc9d48a4f478ac9630f99,
         type: 3}
       propertyPath: m_RootOrder

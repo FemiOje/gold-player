@@ -96,7 +96,7 @@ namespace Hertzole.GoldPlayer
         [SerializeField]
         [Tooltip("The height of the character controller when crouched.")]
         [FormerlySerializedAs("m_CrouchHeight")]
-        private float crouchHeight = 0.8f; 
+        private float crouchHeight = 0.8f;
         [SerializeField]
         [Tooltip("How long it takes to crouch.")]
         private float crouchTime = 0.25f;
@@ -1279,9 +1279,6 @@ namespace Hertzole.GoldPlayer
                     // Set the character controller center to the crouch center.
                     CharacterController.center = new Vector3(CharacterController.center.x, controllerCrouchCenter, CharacterController.center.z);
 
-                    PlayerController.Camera.CameraHead.localPosition = new Vector3(PlayerController.Camera.CameraHead.localPosition.x, controllerCrouchCenter, PlayerController.Camera.CameraHead.localPosition.z);
-
-
                     // Set the move speed to the crouch speed.
                     moveSpeed = crouchSpeeds;
 
@@ -1306,6 +1303,7 @@ namespace Hertzole.GoldPlayer
                         {
                             percent = 1;
                         }
+
                         currentCrouchCameraPosition = Mathf.Lerp(crouchStartPosition, crouchCameraPosition, crouchCurve.Evaluate(percent));
                     }
                     else
