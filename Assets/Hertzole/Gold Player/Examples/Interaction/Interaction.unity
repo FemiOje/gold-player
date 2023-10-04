@@ -15302,6 +15302,51 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6628686286402372411, guid: 1538234b58ccc9d48a4f478ac9630f99,
+        type: 3}
+      propertyPath: movement.crouchTime
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 6628686286402372411, guid: 1538234b58ccc9d48a4f478ac9630f99,
+        type: 3}
+      propertyPath: movement.proneHeight
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6628686286402372411, guid: 1538234b58ccc9d48a4f478ac9630f99,
+        type: 3}
+      propertyPath: movement.crouchHeight
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6628686286402372411, guid: 1538234b58ccc9d48a4f478ac9630f99,
+        type: 3}
+      propertyPath: movement.proneToggleMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6628686286402372411, guid: 1538234b58ccc9d48a4f478ac9630f99,
+        type: 3}
+      propertyPath: movement.crouchToggleMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6628686286402372411, guid: 1538234b58ccc9d48a4f478ac9630f99,
+        type: 3}
+      propertyPath: headBob.bobClass.enableBob
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6628686286402372411, guid: 1538234b58ccc9d48a4f478ac9630f99,
+        type: 3}
+      propertyPath: movement.proneSpeeds.forwardSpeed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6628686286402372411, guid: 1538234b58ccc9d48a4f478ac9630f99,
+        type: 3}
+      propertyPath: movement.proneSpeeds.sidewaysSpeed
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6628686286402372411, guid: 1538234b58ccc9d48a4f478ac9630f99,
+        type: 3}
+      propertyPath: movement.proneSpeeds.backwardsSpeed
+      value: 0.5
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1538234b58ccc9d48a4f478ac9630f99, type: 3}
 --- !u!20 &1929272681 stripped

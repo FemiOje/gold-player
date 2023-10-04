@@ -122,7 +122,7 @@ namespace Hertzole.GoldPlayer
         [SerializeField]
         [Tooltip("The movement speeds when proning.")]
         [FormerlySerializedAs("m_ProneSpeeds")]
-        private MovementSpeeds proneSpeeds = new MovementSpeeds(0.5f, 0.5f, 0.5f);
+        private MovementSpeeds proneSpeeds = new MovementSpeeds(1.0f, 1.0f, 0.5f);
         [SerializeField]
         [Tooltip("Determines if the player can jump while in prone position.")]
         [FormerlySerializedAs("m_ProneJumping")]
@@ -934,6 +934,11 @@ namespace Hertzole.GoldPlayer
                 return false;
             }
 
+            if (isProning && !proneJumping)
+            {
+                return false;
+            }
+
             if (isGrounded && !isJumping)
             {
                 return true;
@@ -1075,6 +1080,7 @@ namespace Hertzole.GoldPlayer
         /// <summary>
         /// Handles running.
         /// </summary>
+        ///
         private void Running()
         {
             // If the player can't run, just stop here.
@@ -1132,25 +1138,25 @@ namespace Hertzole.GoldPlayer
                 shouldRun = false;
             }
 
-            // Only run if we're not crouching, can run, and the player wants to be running.
-            if (!isCrouching && canRun && shouldRun)
+            // Only run if we're not crouching and can run.
+            if (!isCrouching && canRun)
             {
-                // If stamina is enabled, only set move speed when stamina is above 0.
-                // Else if stamina is not enabled, simply set move speed to run speeds.
-                // Else if stamina is enabled and current stamina is 0 (or less), set move speed to walking speed.
-                if (stamina.EnableStamina && stamina.CurrentStamina > 0)
+                // Check if the player is in prone position.
+                if (shouldProne) //shouldProne
                 {
+                    // If in prone position, set move speed to prone speeds.
+                    moveSpeed = proneSpeeds;
+                }
+                else if (shouldRun)
+                {
+                    // If not in prone and shouldRun is true, set move speed to run speed.
                     moveSpeed = runSpeeds;
                 }
-                else if (!stamina.EnableStamina)
+                else
                 {
-                    moveSpeed = runSpeeds;
+                    // If not in prone and shouldRun is false, set move speed to walking speed.
+                    moveSpeed = walkingSpeeds;
                 }
-            }
-            else if (!isCrouching && !shouldRun)
-            {
-                // If we're not crouching and not holding down the run button, walk.
-                moveSpeed = walkingSpeeds;
             }
 
             // Only run if m_isRunning is true.
@@ -1164,8 +1170,8 @@ namespace Hertzole.GoldPlayer
 #if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
                     OnBeginRun?.Invoke();
 #else
-                    if (OnBeginRun != null)
-                        OnBeginRun.Invoke();
+            if (OnBeginRun != null)
+                OnBeginRun.Invoke();
 #endif
                 }
 
@@ -1180,8 +1186,8 @@ namespace Hertzole.GoldPlayer
 #if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
                     OnEndRun?.Invoke();
 #else
-                    if (OnEndRun != null)
-                        OnEndRun.Invoke();
+            if (OnEndRun != null)
+                OnEndRun.Invoke();
 #endif
                 }
 
@@ -1190,9 +1196,7 @@ namespace Hertzole.GoldPlayer
             }
         }
 
-        /// <summary>
-        /// Handles crouching.
-        /// </summary>
+
         private void Crouching(float deltaTime)
         {
             // Only run the code if we can crouch. If we can't, always set 'isCrouching' to false.
@@ -1350,7 +1354,104 @@ namespace Hertzole.GoldPlayer
 
 
         ///PRONING
+        ///
+
+
+        //gptcode
         private void Proning(float deltaTime)
+        {
+            // Only run the code if we can prone. If we can't, always set 'isProning' to false.
+            if (canProne)
+            {
+                if (canMoveAround)
+                {
+                    switch (proneToggleMode)
+                    {
+                        case ProneToggleMode.Hold:
+                            {
+                                shouldProne = GetButton(proneHash);
+                                break;
+                            }
+                        case ProneToggleMode.Toggle:
+                            {
+                                bool proneButtonPressed = GetButtonDown(proneHash);
+                                if (proneButtonPressed)
+                                {
+                                    shouldProne = !shouldProne;
+                                }
+                                break;
+                            }
+                    }
+                }
+
+                // If the player wants to be proning, set is proning to true.
+                // Else if we can stand up and we are proning, stop proning.
+                if (shouldProne)
+                {
+                    isProning = true;
+
+                    // If the player is proning, set move speed to prone speed.
+                    moveSpeed = proneSpeeds;
+                }
+                else if (canStandUp && isProning && !shouldProne)
+                {
+                    // If the player was previously in prone position, fire the OnEndProne event, as the player is no longer proning.
+                    if (previouslyProned)
+                    {
+                        proneTimer = 0;
+                        proneStartPosition = PlayerController.Camera.CameraHead.localPosition.y;
+
+#if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
+                        OnEndProne?.Invoke();
+#else
+                if (OnEndProne != null)
+                    OnEndProne.Invoke();
+#endif
+                    }
+
+                    // Set 'isProning' to false.
+                    isProning = false;
+
+                    // If not proning, set move speed based on whether the player should run or walk.
+                    if (shouldRun)
+                    {
+                        moveSpeed = runSpeeds;
+                    }
+                    else
+                    {
+                        moveSpeed = walkingSpeeds;
+                    }
+
+                    // The player was not previously proned.
+                    previouslyProned = false;
+                }
+
+                // Only do the code if the player is proning.
+                if (isProning)
+                {
+                    // If the player wasn't previously proned, fire the OnBeginProne event, as the player is now proning.
+                    if (!previouslyProned)
+                    {
+                        proneTimer = 0;
+                        proneStartPosition = PlayerController.Camera.CameraHead.localPosition.y;
+
+#if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
+                        OnBeginProne?.Invoke();
+#else
+                if (OnBeginProne != null)
+                    OnBeginProne.Invoke();
+#endif
+                    }
+                }
+            }
+        }
+
+
+
+
+
+
+        /*private void Proning(float deltaTime)
         {
             // Only run the code if we can prone. If we can't, always set 'isProning' to false.
             if (canProne)
@@ -1504,7 +1605,7 @@ namespace Hertzole.GoldPlayer
                 isProning = false;
             }
         }
-
+        */
 
 
 

@@ -473,6 +473,7 @@ namespace Hertzole.GoldPlayer
                 new InputSystemItem(gp != null ? gp.Movement.JumpInput : "Jump", null),
                 new InputSystemItem(gp != null ? gp.Movement.RunInput : "Run", null),
                 new InputSystemItem(gp != null ? gp.Movement.CrouchInput : "Crouch", null),
+                new InputSystemItem(gp != null ? gp.Movement.ProneInput : "Prone", null),
 #if !GOLD_PLAYER_DISABLE_INTERACTION
                 new InputSystemItem(gi != null ? gi.InteractInput : "Interact", null)
 #endif
