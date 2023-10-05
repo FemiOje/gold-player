@@ -15345,7 +15345,7 @@ PrefabInstance:
     - target: {fileID: 6628686286402372411, guid: 1538234b58ccc9d48a4f478ac9630f99,
         type: 3}
       propertyPath: movement.proneSpeeds.backwardsSpeed
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1538234b58ccc9d48a4f478ac9630f99, type: 3}
