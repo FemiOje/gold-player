@@ -354,8 +354,8 @@ MonoBehaviour:
     canCrouch: 1
     crouchToggleMode: 0
     crouchSpeeds:
-      forwardSpeed: 1.5
-      sidewaysSpeed: 1.5
+      forwardSpeed: 1
+      sidewaysSpeed: 1
       backwardsSpeed: 1
     crouchJumping: 0
     crouchHeight: 0.8

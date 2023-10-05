@@ -1430,6 +1430,11 @@ namespace Hertzole.GoldPlayer
                     // Set 'isProning' to false.
                     isProning = false;
 
+                    // Set the character controller height to the original height we got at the start.
+                    CharacterController.height = originalControllerHeight;
+                    // Set the character controller center to the original center we got at the start.
+                    CharacterController.center = originalControllerCenter;
+
                     // If not proning, set move speed based on whether the player should run or walk.
                     if (shouldRun)
                     {
@@ -1490,6 +1495,10 @@ namespace Hertzole.GoldPlayer
                     OnBeginProne.Invoke();
 #endif
                     }
+                    // Set the character controller height to the crouch height.
+                    CharacterController.height = proneHeight;
+                    // Set the character controller center to the crouch center.
+                    CharacterController.center = new Vector3(CharacterController.center.x, controllerProneCenter, CharacterController.center.z);
 
                     // Modify camera position for prone here, similar to crouch camera position adjustment.
                     // Adjust the camera position and invoke any necessary events or animations.
