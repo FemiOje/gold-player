@@ -484,7 +484,6 @@ namespace Hertzole.GoldPlayer
         /// <summary> Is the player in prone mode? </summary>
         public bool IsProning { get { return isProning; } }
 
-
         /// <summary> Can the player stand up while crouching/proning? </summary>
         public bool CanStandUp { get { return canStandUp; } }
         /// <summary> Was the jump button pressed? </summary>
@@ -1075,121 +1074,93 @@ namespace Hertzole.GoldPlayer
         /// Handles running.
         /// </summary>
         ///
+
         private void Running()
         {
-            // If the player can't run, just stop here.
             if (!canRun)
             {
+                shouldRun = false;
+                isRunning = false;
                 return;
             }
 
-            // Set 'isRunning' to true if the player velocity is above the walking speed max.
-            isRunning = new Vector2(velocity.x, velocity.z).magnitude > (walkingSpeeds.Max + 0.5f);
+            float playerVelocity = new Vector2(velocity.x, velocity.z).magnitude;
 
-            // Only set shouldRun if the player can move around.
+            isRunning = playerVelocity > (walkingSpeeds.Max + 0.5f);
+
+            //
+            //float playerVelocity = new Vector2(velocity.x, velocity.z).magnitude;
+            Debug.Log("Player Velocity: " + playerVelocity);
+            Debug.Log("Walking Speed Max: " + walkingSpeeds.Max);
+            //isRunning = playerVelocity > (walkingSpeeds.Max + 0.5f);
+            Debug.Log("isRunning: " + isRunning);
+
+
             if (canMoveAround)
             {
-                bool runButtonPressed = GetButtonDown(runHash);
-                bool runButtonDown = GetButton(runHash);
-
-                switch (runToggleMode)
-                {
-                    case RunToggleMode.Hold:
-                        {
-                            shouldRun = runButtonDown;
-                            break;
-                        }
-                    case RunToggleMode.Toggle:
-                        {
-                            if (runButtonPressed)
-                            {
-                                shouldRun = !shouldRun;
-                            }
-                            break;
-                        }
-                    case RunToggleMode.UntilNoInput:
-                        {
-                            if (!hasUserInput)
-                            {
-                                shouldRun = false;
-                            }
-                            else if (!isRunning && !didRunSinceLastBreakInMovement && runButtonDown)
-                            {
-                                shouldRun = true;
-                            }
-                            else if (runButtonPressed)
-                            {
-                                shouldRun = !shouldRun;
-                            }
-                            break;
-                        }
-                }
+                HandleRunningInput();
             }
 
-            // Just set shouldRun to false if there's not enough stamina. The player should not be running.
-            if (shouldRun && stamina.EnableStamina && stamina.CurrentStamina <= 0)
+            if (!canRun || !shouldRun || (stamina.EnableStamina && stamina.CurrentStamina <= 0))
             {
                 shouldRun = false;
             }
 
-            // Only run if we're not crouching and can run.
-            if (!isCrouching && canRun)
+            if (!isCrouching && !shouldProne)
             {
-                // Check if the player is in prone position.
-                if (shouldProne)
-                {
-                    // If in prone position, set move speed to prone speeds.
-                    moveSpeed = proneSpeeds;
-                }
-                else if (shouldRun)
-                {
-                    // If not in prone and shouldRun is true, set move speed to run speed.
-                    moveSpeed = runSpeeds;
-                }
-                else
-                {
-                    // If not in prone and shouldRun is false, set move speed to walking speed.
-                    moveSpeed = walkingSpeeds;
-                }
+                moveSpeed = isRunning ? runSpeeds : walkingSpeeds;
+                Debug.Log("shouldRun: " + shouldRun);
+                Debug.Log("isRunning: " + isRunning);
             }
 
-            // Only run if m_isRunning is true.
-            if (isRunning)
+            HandleRunEvents();
+        }
+
+        private void HandleRunningInput()
+        {
+            bool runButtonPressed = GetButtonDown(runHash);
+            bool runButtonDown = GetButton(runHash);
+
+            switch (runToggleMode)
             {
-                didRunSinceLastBreakInMovement = true;
-
-                // If the player wasn't previously running, they just started. Fire the OnBeginRun event.
-                if (!previouslyRunning)
-                {
-#if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
-                    OnBeginRun?.Invoke();
-#else
-            if (OnBeginRun != null)
-                OnBeginRun.Invoke();
-#endif
-                }
-
-                // The player was previously running.
-                previouslyRunning = true;
-            }
-            else
-            {
-                // If the player was previously running, fire the OnEndRun event.
-                if (previouslyRunning)
-                {
-#if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
-                    OnEndRun?.Invoke();
-#else
-            if (OnEndRun != null)
-                OnEndRun.Invoke();
-#endif
-                }
-
-                // The player is no longer running.
-                previouslyRunning = false;
+                case RunToggleMode.Hold:
+                    shouldRun = runButtonDown;
+                    Debug.Log("Hold - shouldRun: " + shouldRun);
+                    break;
+                case RunToggleMode.Toggle:
+                    if (runButtonPressed)
+                        shouldRun = !shouldRun;
+                    break;
+                case RunToggleMode.UntilNoInput:
+                    if (!hasUserInput)
+                    {
+                        shouldRun = false;
+                    }
+                    else if (!isRunning && !didRunSinceLastBreakInMovement && runButtonDown)
+                    {
+                        shouldRun = true;
+                    }
+                    else if (runButtonPressed)
+                    {
+                        shouldRun = !shouldRun;
+                    }
+                    break;
             }
         }
 
+        private void HandleRunEvents()
+        {
+            if (isRunning && !previouslyRunning)
+            {
+                OnBeginRun?.Invoke();
+                previouslyRunning = true;
+            }
+            else if (!isRunning && previouslyRunning)
+            {
+                OnEndRun?.Invoke();
+                previouslyRunning = false;
+            }
+        }
 
         private void Crouching(float deltaTime)
         {
@@ -1347,194 +1318,69 @@ namespace Hertzole.GoldPlayer
 
         private void Proning(float deltaTime)
         {
-            // Only run the code if we can prone. If we can't, always set 'isProning' to false.
-            if (canProne)
+            if (!canProne || !canMoveAround)
             {
-                if (canMoveAround)
-                {
-                    switch (proneToggleMode)
-                    {
-                        case ProneToggleMode.Hold:
-                            {
-                                shouldProne = GetButton(proneHash);
-                                break;
-                            }
-                        case ProneToggleMode.Toggle:
-                            {
-                                bool proneButtonPressed = GetButtonDown(proneHash);
-                                if (proneButtonPressed)
-                                {
-                                    shouldProne = !shouldProne;
-                                }
-                                break;
-                            }
-                    }
-                }
+                isProning = false;
+                shouldProne = false;
+                return;
+            }
 
-                // If the player wants to be proning, set is proning to true.
-                // Else if we can stand up and we are proning, stop proning.
-                if (shouldProne)
-                {
-                    isProning = true;
+            switch (proneToggleMode)
+            {
+                case ProneToggleMode.Hold:
+                    shouldProne = GetButton(proneHash);
+                    break;
+                case ProneToggleMode.Toggle:
+                    if (GetButtonDown(proneHash))
+                        shouldProne = !shouldProne;
+                    break;
+            }
 
-                    // If the player is proning, set move speed to prone speed.
-                    moveSpeed = proneSpeeds;
-
-                    // Modify camera position for prone here, similar to crouch camera position adjustment.
-                    // Adjust the camera position and invoke any necessary events or animations.
-                    float percent = 0;
-
-                    if (proneTime > 0)
-                    {
-                        if (proneTimer < proneTime)
-                        {
-                            percent = proneTimer / proneTime;
-                            proneTimer += deltaTime;
-                        }
-                        else
-                        {
-                            percent = 1;
-                        }
-
-                        currentProneCameraPosition = Mathf.Lerp(proneStartPosition, proneCameraPosition, proneCurve.Evaluate(percent));
-                    }
-                    else
-                    {
-                        currentProneCameraPosition = proneCameraPosition;
-                    }
-
-                    Vector3 localPos = PlayerController.Camera.CameraHead.localPosition;
-
-                    // Lerp the current prone camera position to the desired prone camera position.
-                    // Set the camera head position to the current prone camera position.
-                    PlayerController.Camera.CameraHead.localPosition = new Vector3(localPos.x, currentProneCameraPosition, localPos.z);
-
-                    // Don't forget to invoke any necessary events or animations when going prone.
-                }
-                else if (canStandUp && isProning && !shouldProne)
-                {
-                    // If the player was previously in prone position, fire the OnEndProne event, as the player is no longer proning.
-                    if (previouslyProned)
-                    {
-                        proneTimer = 0;
-                        proneStartPosition = PlayerController.Camera.CameraHead.localPosition.y;
-
-#if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
-                        OnEndProne?.Invoke();
-#else
-                if (OnEndProne != null)
-                    OnEndProne.Invoke();
-#endif
-                    }
-
-                    // Set 'isProning' to false.
-                    isProning = false;
-
-                    // Set the character controller height to the original height we got at the start.
-                    CharacterController.height = originalControllerHeight;
-                    // Set the character controller center to the original center we got at the start.
-                    CharacterController.center = originalControllerCenter;
-
-                    // If not proning, set move speed based on whether the player should run or walk.
-                    if (shouldRun)
-                    {
-                        moveSpeed = runSpeeds;
-                    }
-                    else
-                    {
-                        moveSpeed = walkingSpeeds;
-                    }
-
-                    // The player was not previously proned.
-                    previouslyProned = false;
-
-                    // Adjust camera position to original here, similar to the crouching method.
-                    float percent = 0;
-
-                    if (standUpTime > 0)
-                    {
-                        if (proneTimer < standUpTime)
-                        {
-                            percent = proneTimer / standUpTime;
-                            proneTimer += deltaTime;
-                        }
-                        else
-                        {
-                            percent = 1;
-                        }
-
-                        currentProneCameraPosition = Mathf.Lerp(proneStartPosition, originalCameraPosition, standUpCurve.Evaluate(percent));
-                    }
-                    else
-                    {
-                        currentProneCameraPosition = originalCameraPosition;
-                    }
-
-                    Vector3 localPos = PlayerController.Camera.CameraHead.localPosition;
-
-                    // Lerp the current prone camera position to the original camera position.
-                    // Set the camera head position to the current prone camera position.
-                    PlayerController.Camera.CameraHead.localPosition = new Vector3(localPos.x, currentProneCameraPosition, localPos.z);
-
-                    // Invoke any necessary events or animations when standing up from prone.
-                }
-
-                // Only do the code if the player is proning.
-                if (isProning)
-                {
-                    // If the player wasn't previously proned, fire the OnBeginProne event, as the player is now proning.
-                    if (!previouslyProned)
-                    {
-                        proneTimer = 0;
-                        proneStartPosition = PlayerController.Camera.CameraHead.localPosition.y;
-
-#if NET_4_6 || (UNITY_2018_3_OR_NEWER && !NET_LEGACY)
-                        OnBeginProne?.Invoke();
-#else
-                if (OnBeginProne != null)
-                    OnBeginProne.Invoke();
-#endif
-                    }
-                    // Set the character controller height to the crouch height.
-                    CharacterController.height = proneHeight;
-                    // Set the character controller center to the crouch center.
-                    CharacterController.center = new Vector3(CharacterController.center.x, controllerProneCenter, CharacterController.center.z);
-
-                    // Modify camera position for prone here, similar to crouch camera position adjustment.
-                    // Adjust the camera position and invoke any necessary events or animations.
-                    float percent = 0;
-
-                    if (proneTime > 0)
-                    {
-                        if (proneTimer < proneTime)
-                        {
-                            percent = proneTimer / proneTime;
-                            proneTimer += deltaTime;
-                        }
-                        else
-                        {
-                            percent = 1;
-                        }
-
-                        currentProneCameraPosition = Mathf.Lerp(proneStartPosition, proneCameraPosition, proneCurve.Evaluate(percent));
-                    }
-                    else
-                    {
-                        currentProneCameraPosition = proneCameraPosition;
-                    }
-
-                    Vector3 localPos = PlayerController.Camera.CameraHead.localPosition;
-
-                    // Lerp the current prone camera position to the desired prone camera position.
-                    // Set the camera head position to the current prone camera position.
-                    PlayerController.Camera.CameraHead.localPosition = new Vector3(localPos.x, currentProneCameraPosition, localPos.z);
-
-                    // Invoke any necessary events or animations when in the prone position.
-                }
+            if (shouldProne)
+            {
+                HandleProne(deltaTime);
+            }
+            else if (isProning && canStandUp)
+            {
+                HandleStandUp(deltaTime);
             }
         }
 
+        private void HandleProne(float deltaTime)
+        {
+            isProning = true;
+            moveSpeed = proneSpeeds;
+            // Modify camera position for prone
+            UpdateCameraPosition(deltaTime, proneStartPosition, proneCameraPosition, proneCurve);
 
+            if (!previouslyProned)
+            {
+                OnBeginProne?.Invoke();
+                previouslyProned = true;
+            }
+        }
+
+        private void HandleStandUp(float deltaTime)
+        {
+            isProning = false;
+            moveSpeed = shouldRun ? runSpeeds : walkingSpeeds;
+            UpdateCameraPosition(deltaTime, proneStartPosition, originalCameraPosition, standUpCurve);
+
+            if (previouslyProned)
+            {
+                OnEndProne?.Invoke();
+                previouslyProned = false;
+            }
+        }
+
+        private void UpdateCameraPosition(float deltaTime, float start, float target, AnimationCurve curve)
+        {
+            float percent = Mathf.Clamp01(proneTimer / proneTime);
+            proneTimer += deltaTime;
+            currentProneCameraPosition = Mathf.Lerp(start, target, curve.Evaluate(percent));
+            Vector3 localPos = PlayerController.Camera.CameraHead.localPosition;
+            PlayerController.Camera.CameraHead.localPosition = new Vector3(localPos.x, currentProneCameraPosition, localPos.z);
+        }
 
         /// <summary>
         /// Checks if there's anything above the player that could stop the player from standing up.
@@ -1605,6 +1451,7 @@ namespace Hertzole.GoldPlayer
             pressedJump = false;
             shouldRun = false;
             shouldCrouch = false;
+            shouldProne = false;
         }
 
 #if UNITY_EDITOR

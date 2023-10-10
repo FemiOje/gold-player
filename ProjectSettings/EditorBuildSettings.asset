@@ -6,6 +6,8 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Hertzole/Gold Player/WebGL Example/Gold Player Example.unity
-    guid: 80d8f40f7f892a645816ea047a8eb0f0
-  m_configObjects: {}
+    path: Assets/Hertzole/Gold Player/Examples/Interaction/Interaction.unity
+    guid: 1700c30810f51dc43b3a52772e0d8c27
+  m_configObjects:
+    com.unity.input.settings: {fileID: 11400000, guid: 31b3533b1f72b3849951fcc4f2dda222,
+      type: 2}
