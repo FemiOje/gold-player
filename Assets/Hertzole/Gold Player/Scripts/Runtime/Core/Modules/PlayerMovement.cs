@@ -122,7 +122,7 @@ namespace Hertzole.GoldPlayer
         [SerializeField]
         [Tooltip("The movement speeds when proning.")]
         [FormerlySerializedAs("m_ProneSpeeds")]
-        private MovementSpeeds proneSpeeds = new MovementSpeeds(1.0f, 1.0f, 0.5f);
+        private MovementSpeeds proneSpeeds = new MovementSpeeds(0.5f, 0.5f, 0.5f);
         [SerializeField]
         [Tooltip("Determines if the player can jump while in prone position.")]
         [FormerlySerializedAs("m_ProneJumping")]
@@ -1084,36 +1084,28 @@ namespace Hertzole.GoldPlayer
                 return;
             }
 
-            float playerVelocity = new Vector2(velocity.x, velocity.z).magnitude;
-
-            isRunning = playerVelocity > (walkingSpeeds.Max + 0.5f);
-
-            //
-            //float playerVelocity = new Vector2(velocity.x, velocity.z).magnitude;
-            Debug.Log("Player Velocity: " + playerVelocity);
-            Debug.Log("Walking Speed Max: " + walkingSpeeds.Max);
-            //isRunning = playerVelocity > (walkingSpeeds.Max + 0.5f);
-            Debug.Log("isRunning: " + isRunning);
-
-
-            if (canMoveAround)
-            {
-                HandleRunningInput();
-            }
+            // Handle running input to set shouldRun.
+            HandleRunningInput();
 
             if (!canRun || !shouldRun || (stamina.EnableStamina && stamina.CurrentStamina <= 0))
             {
                 shouldRun = false;
             }
 
+            // Set moveSpeed based on the current state.
             if (!isCrouching && !shouldProne)
             {
-                moveSpeed = isRunning ? runSpeeds : walkingSpeeds;
-                Debug.Log("shouldRun: " + shouldRun);
-                Debug.Log("isRunning: " + isRunning);
+                moveSpeed = shouldRun ? runSpeeds : walkingSpeeds;
             }
 
             HandleRunEvents();
+
+            // Reset movement if neither running nor moving nor proning.
+            if (!isRunning && movementInput == Vector2.zero && !shouldProne)
+            {
+                // Reset movement input to zero.
+                ResetMovementInput();
+            }
         }
 
         private void HandleRunningInput()
@@ -1125,7 +1117,6 @@ namespace Hertzole.GoldPlayer
             {
                 case RunToggleMode.Hold:
                     shouldRun = runButtonDown;
-                    Debug.Log("Hold - shouldRun: " + shouldRun);
                     break;
                 case RunToggleMode.Toggle:
                     if (runButtonPressed)
@@ -1147,6 +1138,7 @@ namespace Hertzole.GoldPlayer
                     break;
             }
         }
+
 
         private void HandleRunEvents()
         {
@@ -1316,6 +1308,23 @@ namespace Hertzole.GoldPlayer
         }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         private void Proning(float deltaTime)
         {
             if (!canProne || !canMoveAround)
@@ -1338,11 +1347,21 @@ namespace Hertzole.GoldPlayer
 
             if (shouldProne)
             {
+                Debug.Log("Pressing the prone button...");
                 HandleProne(deltaTime);
             }
-            else if (isProning && canStandUp)
+            else if (isProning)
             {
-                HandleStandUp(deltaTime);
+                if (CheckCanStandUp())
+                {
+                    Debug.Log("Releasing the prone button. Player can stand up");
+                    HandleStandUp(deltaTime);
+                }
+                else
+                {
+                    Debug.Log("Player cannot stand up");
+                    HandleProne(deltaTime);
+                }
             }
         }
 
@@ -1350,6 +1369,11 @@ namespace Hertzole.GoldPlayer
         {
             isProning = true;
             moveSpeed = proneSpeeds;
+
+            // Update character controller height and center for prone.
+            CharacterController.height = proneHeight;
+            CharacterController.center = new Vector3(CharacterController.center.x, controllerProneCenter, CharacterController.center.z);
+
             // Modify camera position for prone
             UpdateCameraPosition(deltaTime, proneStartPosition, proneCameraPosition, proneCurve);
 
@@ -1364,6 +1388,11 @@ namespace Hertzole.GoldPlayer
         {
             isProning = false;
             moveSpeed = shouldRun ? runSpeeds : walkingSpeeds;
+
+            // Reset character controller height and center.
+            CharacterController.height = originalControllerHeight;
+            CharacterController.center = originalControllerCenter;
+
             UpdateCameraPosition(deltaTime, proneStartPosition, originalCameraPosition, standUpCurve);
 
             if (previouslyProned)
@@ -1373,6 +1402,24 @@ namespace Hertzole.GoldPlayer
             }
         }
 
+
+
+
+        private bool CanStandUpProne()
+        {
+            // Cache the values to avoid too many native calls.
+            Vector3 position = PlayerTransform.position;
+            float radius = CharacterController.radius;
+            float height = proneHeight;
+
+            RaycastHit hit;
+            // Cast a ray from the player's position upwards to check for obstacles.
+            if (Physics.Raycast(position, Vector3.up, out hit, height, ~groundLayer))
+            {
+                return false; // Obstacle detected, cannot stand up.
+            }
+            return true; // No obstacles, can stand up.
+        }
         private void UpdateCameraPosition(float deltaTime, float start, float target, AnimationCurve curve)
         {
             float percent = Mathf.Clamp01(proneTimer / proneTime);
@@ -1395,6 +1442,18 @@ namespace Hertzole.GoldPlayer
             return !Physics.CheckCapsule(position + Vector3.up * radius, position + (Vector3.up * originalControllerHeight) - (Vector3.up * radius), radius, groundLayer, QueryTriggerInteraction.Ignore);
         }
 
+        /*
+        private bool CanStandUpProne()
+        {
+            // Cache the values to avoid too many native calls.
+            Vector3 position = PlayerTransform.position;
+            float radius = CharacterController.radius;
+            float height = proneHeight;
+
+            // Check if the player can stand up using a capsule from the player bottom to the player top.
+            return !Physics.CheckCapsule(position + Vector3.up * radius, position + (Vector3.up * height) - (Vector3.up * radius), radius, groundLayer, QueryTriggerInteraction.Ignore);
+        }
+        */
         /// <summary>
         /// Do updates related to force.
         /// </summary>
