@@ -336,7 +336,8 @@ namespace Hertzole.GoldPlayer
         public bool UnscaledTime { get { return unscaledTime; } set { unscaledTime = value; } }
 
         /// <summary> The speeds when walking. </summary>
-        public MovementSpeeds WalkingSpeeds { get { return walkingSpeeds; } set { walkingSpeeds = value; if (!isRunning && !isCrouching && !isProning) { moveSpeed = value; } } }
+        //public MovementSpeeds WalkingSpeeds { get { return walkingSpeeds; } set { walkingSpeeds = value; if (!isRunning && !isCrouching && !isProning) { moveSpeed = value; } } }
+        public MovementSpeeds WalkingSpeeds { get { return walkingSpeeds; } set { walkingSpeeds = value; if (!isRunning) { moveSpeed = value; } } }
 
         /// <summary> Multiplies the current move speed. </summary>
         public float MoveSpeedMultiplier { get { return moveSpeedMultiplier; } set { moveSpeedMultiplier = value; } }
@@ -1308,23 +1309,6 @@ namespace Hertzole.GoldPlayer
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         private void Proning(float deltaTime)
         {
             if (!canProne || !canMoveAround)
@@ -1363,6 +1347,16 @@ namespace Hertzole.GoldPlayer
                     HandleProne(deltaTime);
                 }
             }
+
+            //
+            if (GetInput(deltaTime) != Vector2.zero)
+            {
+                if (isProning)
+                {
+                    Debug.Log("Player is pressing prone + move");
+                    moveSpeed = proneSpeeds;
+                }
+            }
         }
 
         private void HandleProne(float deltaTime)
@@ -1388,10 +1382,10 @@ namespace Hertzole.GoldPlayer
         {
             isProning = false;
             moveSpeed = shouldRun ? runSpeeds : walkingSpeeds;
-
             // Reset character controller height and center.
             CharacterController.height = originalControllerHeight;
             CharacterController.center = originalControllerCenter;
+
 
             UpdateCameraPosition(deltaTime, proneStartPosition, originalCameraPosition, standUpCurve);
 
@@ -1403,23 +1397,6 @@ namespace Hertzole.GoldPlayer
         }
 
 
-
-
-        private bool CanStandUpProne()
-        {
-            // Cache the values to avoid too many native calls.
-            Vector3 position = PlayerTransform.position;
-            float radius = CharacterController.radius;
-            float height = proneHeight;
-
-            RaycastHit hit;
-            // Cast a ray from the player's position upwards to check for obstacles.
-            if (Physics.Raycast(position, Vector3.up, out hit, height, ~groundLayer))
-            {
-                return false; // Obstacle detected, cannot stand up.
-            }
-            return true; // No obstacles, can stand up.
-        }
         private void UpdateCameraPosition(float deltaTime, float start, float target, AnimationCurve curve)
         {
             float percent = Mathf.Clamp01(proneTimer / proneTime);
@@ -1442,18 +1419,6 @@ namespace Hertzole.GoldPlayer
             return !Physics.CheckCapsule(position + Vector3.up * radius, position + (Vector3.up * originalControllerHeight) - (Vector3.up * radius), radius, groundLayer, QueryTriggerInteraction.Ignore);
         }
 
-        /*
-        private bool CanStandUpProne()
-        {
-            // Cache the values to avoid too many native calls.
-            Vector3 position = PlayerTransform.position;
-            float radius = CharacterController.radius;
-            float height = proneHeight;
-
-            // Check if the player can stand up using a capsule from the player bottom to the player top.
-            return !Physics.CheckCapsule(position + Vector3.up * radius, position + (Vector3.up * height) - (Vector3.up * radius), radius, groundLayer, QueryTriggerInteraction.Ignore);
-        }
-        */
         /// <summary>
         /// Do updates related to force.
         /// </summary>
