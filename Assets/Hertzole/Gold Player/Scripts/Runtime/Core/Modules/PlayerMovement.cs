@@ -1331,30 +1331,31 @@ namespace Hertzole.GoldPlayer
 
             if (shouldProne)
             {
-                Debug.Log("Pressing the prone button...");
+                //Player is pressing the prone button
                 HandleProne(deltaTime);
             }
             else if (isProning)
             {
                 if (CheckCanStandUp())
                 {
-                    Debug.Log("Releasing the prone button. Player can stand up");
+                    //Releasing the prone button. Player can stand up
                     HandleStandUp(deltaTime);
                 }
                 else
                 {
-                    Debug.Log("Player cannot stand up");
+                    //Player cannot stand up
                     HandleProne(deltaTime);
                 }
             }
 
-            //
+
             if (GetInput(deltaTime) != Vector2.zero)
             {
                 if (isProning)
                 {
-                    Debug.Log("Player is pressing prone + move");
+                    //Player is pressing prone + move
                     moveSpeed = proneSpeeds;
+                    HandleProne(deltaTime);
                 }
             }
         }
